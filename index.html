@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Painel eNotas - Demonstração</title>
+  <style>
+    :root{
+      --bg:#f5f6fa;
+      --card:#ffffff;
+      --muted:#7a7a85;
+      --border:#e5e5ea;
+      --purple:#6f2fa8;
+      --teal:#2fb7ab;
+      --link:#0066e6;
+      --shadow:0 6px 16px rgba(0,0,0,.06);
+      --radius:12px;
+    }
+
+    html,body{height:100%;margin:0;font-family:Inter, "Segoe UI", Roboto, Arial, sans-serif;background:var(--bg);color:#111;}
+    .container{ width:1100px; max-width:96%; margin:20px auto; }
+
+    /* Painel principal */
+    .panel{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow); position:relative; }
+
+    /* Banners (Novidades / Avisos) */
+    .banner{ display:flex; gap:12px; align-items:stretch; border-radius:10px; border:1px solid rgba(0,0,0,.08); overflow:hidden; background:#fff; margin-bottom:12px; position:relative; }
+    .banner .col{ flex:1; min-width:0; display:flex; flex-direction:column; }
+    .banner .head{ padding:10px 12px; color:#fff; font-weight:700; display:flex; align-items:center; gap:8px; font-size:13px; }
+    .novidades .head{ background: linear-gradient(90deg, var(--purple), #8f4bb6); }
+    .avisos .head{ background: linear-gradient(90deg, var(--teal), #2aa79e); }
+
+    .banner .content{ padding:12px 14px; font-size:14px; color:#222; line-height:1.35; }
+
+    a.link-here{ color:var(--link); font-weight:700; text-decoration:none; }
+    a.link-here:hover{ text-decoration:underline; }
+
+    /* Botão expand (ícone custom) */
+    .expand-btn{
+      position:absolute; top:8px; right:8px; z-index:3;
+      width:34px; height:34px; border:0; border-radius:8px; background:#fff; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      box-shadow:0 2px 6px rgba(0,0,0,.08);
+    }
+    .expand-icon{ width:22px; height:22px; color:#555; }
+
+    /* Expand dentro da página (sem overlay) */
+    .banner.expanded{
+      position: static; height:auto; max-height:none;
+      padding:0; border:1px solid var(--border);
+      display:block;
+    }
+    .banner.expanded .head{ padding:12px 0 6px; }
+    .banner.expanded .close-btn{
+      position:absolute; top:8px; right:8px; border:0; background:#f0f0f0; padding:6px 10px; border-radius:6px;
+      font-weight:700; cursor:pointer;
+    }
+    .banner.expanded .content{ padding:8px 12px 12px; }
+
+    /* Topo Vendas + Área de ações (local único) */
+    .topbar{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin:12px 0 6px; }
+    .title-vendas{ font-size:28px; font-weight:700; color:#222; margin:0; }
+
+    .btn{ border:0; padding:10px 14px; border-radius:8px; cursor:pointer; font-weight:700; font-size:14px; }
+    .btn-purple{ background: linear-gradient(180deg, #6f2fa8, #5a2387); color:#fff; }
+    .btn-gray{ background:#eef0f5; color:#1b1b1b; }
+
+    /* Ações em massa (movido abaixo de Vendas) */
+    .mass-actions{ display:flex; gap:12px; align-items:center; padding:6px 0 12px; }
+
+    /* Tabela */
+    .table-panel{ margin-top:6px; border-radius:10px; border:1px solid var(--border); overflow:hidden; background:#fff; }
+    .table-header{ display:flex; align-items:center; justify-content:space-between; padding:12px 14px; background:#f8f8fb; border-bottom:1px solid var(--border); }
+    .table-header .title{ font-weight:700; font-size:16px; color:#333; }
+    .table-header .meta{ color:var(--muted); font-size:12px; }
+
+    .table-wrap{ max-height:360px; overflow:auto; }
+    table{ width:100%; border-collapse:collapse; min-width:860px; }
+    thead th{ text-align:left; padding:12px 14px; font-size:12px; color:var(--muted); border-bottom:1px solid var(--border); position:sticky; top:0; background:#fff; }
+    tbody td{ padding:12px 14px; border-bottom:1px solid #f0f0f4; font-size:14px; vertical-align:middle; }
+    tbody tr:nth-child(odd){ background:#fff; }
+    tbody tr:nth-child(even){ background:#fbfbfd; }
+    tbody tr:hover{ background:#f5f8ff; }
+
+    .cell-small{ width:60px; white-space:nowrap; }
+
+    .muted{ color:var(--muted); font-size:12px; }
+
+    .amount{ font-weight:700; }
+
+    /* Ícones / status */
+    .badge{ display:inline-flex; align-items:center; gap:6px; padding:6px 8px; border-radius:999px; font-weight:700; font-size:12px; }
+
+    .badge.ok{ background:#e7fff0; color:#0a7a50; border:1px solid #c5f0d1; }
+    .badge.gar{ background:#fffbe0; color:#a06a00; border:1px solid #ffe2a2; }
+
+    .printer-link{ display:inline-flex; align-items:center; gap:6px; color:var(--link); font-weight:700; text-decoration:none; }
+
+    /* Hotmart (símbolo) */
+    .hotmart{ width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; }
+
+    /* Filtros (ícone ao lado do Canal no cabeçalho) */
+    .funnel{ width:16px; height:16px; vertical-align:middle; margin-left:6px; }
+
+    /* Linha de ação (botão genérico) */
+    .action-btn{ display:inline-flex; align-items:center; justify-content:center;
+      padding:6px 10px; border-radius:6px; border:1px solid #e3e3ee; background:#fff; cursor:pointer;
+      font-weight:700; color:#1a1a1a;
+    }
+
+    /* Paginação */
+    .pagination{ display:flex; justify-content:flex-end; gap:8px; padding:12px; border-top:1px solid var(--border); background:#fff; }
+    .page{ padding:8px 12px; border-radius:6px; border:1px solid #e7e7f0; background:#fff; cursor:pointer; font-weight:700; }
+    .page.active{ background: linear-gradient(180deg, #f0e7ff, #e9d9ff); color:var(--purple); }
+
+    @media (max-width: 900px){
+      .container{ padding:0 12px; }
+      table{ min-width:unset; width:100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="panel">
+
+      <!-- Banners -->
+      <div class="banner" id="banner-novidades" aria-label="Banner de novidades">
+        <button class="expand-btn" aria-label="Expandir Novidades" onclick="expandBanner('banner-novidades')">
+          <!-- duas setas diagonais (estilo pedido) -->
+          <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 18l6-6-6-6"></path>
+            <path d="M12 6l6 6-6 6"></path>
+          </svg>
+        </button>
+        <div class="col">
+          <div class="head novidades" style="background:linear-gradient(90deg, #6f2fa8, #8f4bb6); color:#fff; padding:12px;">🆕 Novidades</div>
+          <div class="content" style="padding:12px 14px;">
+            <ul style="margin:0; padding-left:18px;">
+              <li>Fique por dentro das novidades da reforma tributária, que serão aplicadas a partir de Janeiro/2026. Clique <a class="link-here" href="#" aria-label="Novidades - aqui">[aqui]</a></li>
+              <li>Agora você também pode emitir notas de seus produtos físicos vendidos na Hotmart, pelo eNotas. Para saber mais, clique <a class="link-here" href="#" aria-label="Hotmart - aqui">[aqui]</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="banner" id="banner-avisos" aria-label="Banner de avisos" style="margin-top:6px;">
+        <button class="expand-btn" aria-label="Expandir Avisos" onclick="expandBanner('banner-avisos')">
+          <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 18l6-6-6-6"></path>
+            <path d="M12 6l6 6-6 6"></path>
+          </svg>
+        </button>
+        <div class="col">
+          <div class="head avisos" style="background:linear-gradient(90deg, #2fb7ab, #2aa79e); color:#fff; padding:12px;">⚠ Avisos</div>
+          <div class="content" style="padding:12px 14px;">
+            <ul style="margin:0; padding-left:18px;">
+              <li>Você possui <strong>20 notas fiscais não emitidas</strong>, clique <a class="link-here" href="#" aria-label="Notas pendentes - aqui">[aqui]</a> para detalhes.</li>
+              <li>O seu certificado digital irá vencer em <strong>10 dias</strong>, clique <a class="link-here" href="#" aria-label="Certificado - aqui">[aqui]</a> para atualizá-lo.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Título Vendas e botão Nova venda (em posição central) -->
+      <div class="topbar" style="margin-top:12px;">
+        <h2 class="title-vendas" style="margin:0;">Vendas</h2>
+      </div>
+
+      <!-- Nova venda (ficará ao lado de Vendas, conforme solicitado) -->
+      <div style="display:flex; justify-content:flex-end; gap:12px; align-items:center; margin-bottom:6px;">
+        <button id="btn-nova-venda" class="btn btn-purple" title="Nova venda">Nova venda</button>
+      </div>
+
+      <!-- Ações em massa (movido abaixo de Vendas) -->
+      <div class="mass-actions" aria-label="Ações em massa" style="margin:6px 0 12px;">
+        <button id="btn-acoes" class="btn btn-gray" title="Ações em massa" style="min-width:180px;">Ações em massa</button>
+      </div>
+
+      <!-- Tabela -->
+      <div class="table-panel" id="tabela-vendas" aria-label="Tabela de vendas com paginação">
+        <div class="table-header">
+          <div>
+            <div class="title">Ações em massa</div>
+            <div class="muted" style="font-size:12px;">Resumo das últimas transações</div>
+          </div>
+          <div class="meta" id="visao-pagina" style="font-weight:700;">Página 1 de 3</div>
+        </div>
+
+        <div class="table-wrap" id="tabela-scroll" tabindex="0" aria-label="Tabela com rolagem e paginação">
+          <table role="table" aria-label="Tabela de vendas">
+            <thead>
+              <tr>
+                <th class="cell-small" style="width:1px;"></th>
+                <th>Data</th>
+                <th>Produto</th>
+                <th>Cliente</th>
+                <th>Valor</th>
+                <th>Notas fiscais</th>
+                <th>Canal
+                  <span class="funnel" aria-label="Filtro" title="Filtro" style="margin-left:6px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M3 5h18l-6 6v4l-6 4V11L3 5z"/>
+                    </svg>
+                  </span>
+                </th>
+              </tr>
+            </thead>
+            <tbody id="tbody-vendas">
+              <!-- Página 1 (linhas 1-5) -->
+              <tr data-page="1">
+                <td class="cell-small">
+                  <button class="expand-btn" aria-label="Expandir linha 1" title="Expandir">
+                    <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M6 18l6-6-6-6"></path>
+                      <path d="M12 6l6 6-6 6"></path>
+                    </svg>
+                  </button>
+                </td>
+                <td>02/10/2025</td>
+                <td>Curso Marketing Digital</td>
+                <td>Maria Silva</td>
+                <td>R$ 249,90</td>
+                <td>
+                  <!-- Emitida com impressora clicável -->
+                  <a href="#" class="printer-link" title="Emitida (clicável)">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <path d="M6 9V6a2 2 0 012-2h8a2 2 0 012 2v3" />
+                      <path d="M6 13h12v4H6z" />
+                      <path d="M6 16h12" />
+                    </svg>
+                    Emitida
+                  </a>
+                </td>
+                <td>
+                  <!-- Hotmart icon (símbolo) -->
+                  <span class="hotmart" title="Hotmart" aria-label="Hotmart">
+                    <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 2l3 6 6 1-4 4 1 6-6-3-6 3 1-6-4-4 6-1z" fill="#ff6f00"/>
+                    </svg>
+                  </span>
+                </td>
+              </tr>
+
+              <!-- Rita Nogueira (ampulheta) -->
+              <tr data-page="1">
+                <td class="cell-small">
+                  <button class="expand-btn" aria-label="Expandir linha Rita" title="Expandir">
+                    <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M6 18l6-6-6-6"></path>
+                      <path d="M12 6l6 6-6 6"></path>
+                    </svg>
+                  </button>
+                </td>
+                <td>29/09/2025</td>
+                <td>Assinatura Mensal</td>
+                <td>Ana Pereira</td>
+                <td>R$ 39,90</td>
+                <td>
+                  <span class="tooltip" aria-label="Pendência">
+                    <span class="badge" style="padding:6px 8px;">⏳</span>
+                    <span class="tooltip-text" style="position:absolute; left:50%; transform:translateX(-50%); bottom:125%; background:#333; color:#fff; padding:6px 8px; border-radius:6px; font-size:12px;">
+                      Em garantia
+                    </span>
+                  </span>
+                </td>
+                <td>
+                  <span class="badge gar" aria-label="Venda pendente">Em garantia</span>
+                </td>
+              </tr>
+
+              <!-- Bruno Costa -->
+              <tr data-page="1">
+                <td class="cell-small">
+                  <button class="expand-btn" aria-label="Expandir linha Bruno" title="Expandir">
+                    <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M6 18l6-6-6-6"></path>
+                      <path d="M12 6l6 6-6 6"></path>
+                    </svg>
+                  </button>
+                </td>
+                <td>21/09/2025</td>
+                <td>eBook: SEO Avançado</td>
+                <td>Bruno Costa</td>
+                <td>R$ 59,00</td>
+                <td>
+                  <a href="#" class="printer-link" title="Emitida">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <path d="M6 9V6a2 2 0 012-2h8a2 2 0 012 2v3" />
+                      <path d="M6 13h12v4H6z" />
+                      <path d="M6 16h12" />
+                    </svg>
+                    Emitida
+                  </a>
+                </td>
+                <td>
+                  <span class="hotmart" title="Hotmart" aria-label="Hotmart">
+                    <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 2l3 6 6 1-4 4 1 6-6-3-6 3 1-6-4-4 6-1z" fill="#ff6f00"/>
+                    </svg>
+                  </span>
+                </td>
+              </tr>
+
+              <!-- Mariana Lopes -->
+              <tr data-page="1">
+                <td class="cell-small">
+                  <button class="expand-btn" aria-label="Expandir linha Mariana" title="Expandir">
+                    <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M6 18l6-6-6-6"></path>
+                      <path d="M12 6l6 6-6 6"></path>
+                    </svg>
+                  </button>
+                </td>
+                <td>12/09/2025</td>
+                <td>Workshop Analytics</td>
+                <td>Mariana Lopes</td>
+                <td>R$ 499,00</td>
+                <td>
+                  <span class="badge gar" aria-label="Venda pendente">Em garantia</span>
+                </td>
+                <td>
+                  <span class="hotmart" title="Hotmart" aria-label="Hotmart">
+                    <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 2l3 6 6 1-4 4 1 6-6-3-6 3 1-6-4-4 6-1z" fill="#ff6f00"/>
+                    </svg>
+                  </span>
+                </td>
+              </tr>
+
+              <!-- Felipe N. -->
+              <tr data-page="1">
+                <td class="cell-small">
+                  <button class="expand-btn" aria-label="Expandir linha Felipe" title="Expandir">
+                    <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M6 18l6-6-6-6"></path>
+                      <path d="M12 6l6 6-6 6"></path>
+                    </svg>
+                  </button>
+                </td>
+                <td>03/09/2025</td>
+                <td>Template Design</td>
+                <td>Felipe N.</td>
+                <td>R$ 79,90</td>
+                <td>
+                  <a href="#" class="printer-link" title="Emitida">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <path d="M6 9V6a2 2 0 012-2h8a2 2 0 012 2v3" />
+                      <path d="M6 13h12v4H6z" />
+                      <path d="M6 16h12" />
+                    </svg>
+                    Emitida
+                  </a>
+                </td>
+                <td>
+                  <span class="hotmart" title="Hotmart" aria-label="Hotmart">
+                    <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 2l3 6 6 1-4 4 1 6-6-3-6 3 1-6-4-4 6-1z" fill="#ff6f00"/>
+                    </svg>
+                  </span>
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Paginação -->
+        <div class="pagination" role="navigation" aria-label="Paginação da tabela">
+          <button class="page" onclick="prevPage()" aria-label="Página anterior">&laquo; Anterior</button>
+          <span class="page active" id="pagina-visual">1</span>
+          <span class="page" onclick="goToPage(2)" aria-label="Página 2" >2</span>
+          <span class="page" onclick="goToPage(3)" aria-label="Página 3" >3</span>
+          <button class="page" onclick="nextPage()" aria-label="Próxima página">Próxima &raquo;</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Expand banners dentro da página com X para fechar
+    function expandBanner(id){
+      const banner = document.getElementById(id);
+      if(!banner) return;
+      const isExpanded = banner.classList.contains('expanded');
+      if(isExpanded){
+        // fechar
+        banner.classList.remove('expanded');
+        const closeBtn = banner.querySelector('.close-btn');
+        if(closeBtn) closeBtn.remove();
+        // reexibir botão de expand
+        const btn = banner.querySelector('.expand-btn');
+        if(btn) btn.style.display = 'flex';
+      } else {
+        // expandir
+        banner.classList.add('expanded');
+        // esconder botão de expand
+        const btn = banner.querySelector('.expand-btn');
+        if(btn) btn.style.display = 'none';
+        // criar botão de fechar (X) se não houver
+        let closeBtn = banner.querySelector('.close-btn');
+        if(!closeBtn){
+          closeBtn = document.createElement('button');
+          closeBtn.className = 'close-btn';
+          closeBtn.textContent = '✖';
+          closeBtn.setAttribute('aria-label', 'Fechar');
+          closeBtn.addEventListener('click', ()=> {
+            banner.classList.remove('expanded');
+            if(btn) btn.style.display = 'flex';
+            closeBtn.remove();
+          });
+          banner.appendChild(closeBtn);
+        }
+      }
+    }
+
+    // Tabela: paginação (5 linhas por página)
+    const rows = Array.from(document.querySelectorAll('#tbody-vendas tr'));
+    const rowsPerPage = 5;
+    const totalPages = Math.ceil(rows.length / rowsPerPage);
+    let currentPage = 1;
+
+    function showPage(p){
+      currentPage = p;
+      rows.forEach((r, idx) => {
+        const pageOfRow = Math.floor(idx / rowsPerPage) + 1;
+        r.style.display = (pageOfRow === p) ? '' : 'none';
+      });
+      // atualização visual da paginação
+      document.querySelectorAll('.pagination .page').forEach(el => el.classList.remove('active'));
+      const pageButtons = Array.from(document.querySelectorAll('.pagination .page')).filter(n => !n.textContent.includes('Anterior') && !n.textContent.includes('Próxima'));
+      pageButtons.forEach((btn, i) => {
+        const num = i + 1;
+        if(num === p) btn.classList.add('active');
+      });
+      document.getElementById('visao-pagina')?.textContent = `Página ${p} de ${totalPages}`;
+    }
+
+    function goToPage(p){
+      if(p < 1) p = 1;
+      if(p > totalPages) p = totalPages;
+      showPage(p);
+    }
+    function prevPage(){ goToPage(currentPage - 1); }
+    function nextPage(){ goToPage(currentPage + 1); }
+
+    // inicialização
+    showPage(1);
+  </script>
+</body>
+</html>
