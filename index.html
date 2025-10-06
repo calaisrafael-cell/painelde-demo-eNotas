@@ -1,452 +1,719 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Painel eNotas - Demonstração</title>
-  <style>
-    :root{
-      --bg:#f5f6fa;
-      --card:#ffffff;
-      --muted:#7a7a85;
-      --border:#e5e5ea;
-      --purple:#6f2fa8;
-      --teal:#2fb7ab;
-      --link:#0066e6;
-      --shadow:0 6px 16px rgba(0,0,0,.06);
-      --radius:12px;
-    }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>eNotas - Painel de Vendas</title>
+<style>
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #f8f9fb;
+    margin: 0;
+    padding: 0;
+  }
 
-    html,body{height:100%;margin:0;font-family:Inter, "Segoe UI", Roboto, Arial, sans-serif;background:var(--bg);color:#111;}
-    .container{ width:1100px; max-width:96%; margin:20px auto; }
+  .container {
+    max-width: 1200px;
+    margin: 30px auto;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    overflow: hidden;
+  }
 
-    /* Painel principal */
-    .panel{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow); position:relative; }
+  /* BANNERS SUPERIORES */
+  .banners {
+    display: flex;
+    border-bottom: 1px solid #e5e5e5;
+  }
 
-    /* Banners (Novidades / Avisos) */
-    .banner{ display:flex; gap:12px; align-items:stretch; border-radius:10px; border:1px solid rgba(0,0,0,.08); overflow:hidden; background:#fff; margin-bottom:12px; position:relative; }
-    .banner .col{ flex:1; min-width:0; display:flex; flex-direction:column; }
-    .banner .head{ padding:10px 12px; color:#fff; font-weight:700; display:flex; align-items:center; gap:8px; font-size:13px; }
-    .novidades .head{ background: linear-gradient(90deg, var(--purple), #8f4bb6); }
-    .avisos .head{ background: linear-gradient(90deg, var(--teal), #2aa79e); }
+  .banner {
+    flex: 1;
+    padding: 16px 20px;
+    position: relative;
+    color: #fff;
+    transition: all 0.3s ease;
+  }
 
-    .banner .content{ padding:12px 14px; font-size:14px; color:#222; line-height:1.35; }
+  .banner h3 {
+    margin: 0 0 8px;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
 
-    a.link-here{ color:var(--link); font-weight:700; text-decoration:none; }
-    a.link-here:hover{ text-decoration:underline; }
+  .banner ul {
+    margin: 0;
+    padding-left: 20px;
+    color: #fff;
+  }
 
-    /* Botão expand (ícone custom) */
-    .expand-btn{
-      position:absolute; top:8px; right:8px; z-index:3;
-      width:34px; height:34px; border:0; border-radius:8px; background:#fff; cursor:pointer;
-      display:flex; align-items:center; justify-content:center;
-      box-shadow:0 2px 6px rgba(0,0,0,.08);
-    }
-    .expand-icon{ width:22px; height:22px; color:#555; }
+  .banner a {
+    color: #cce0ff;
+    text-decoration: underline;
+    cursor: pointer;
+  }
 
-    /* Expand dentro da página (sem overlay) */
-    .banner.expanded{
-      position: static; height:auto; max-height:none;
-      padding:0; border:1px solid var(--border);
-      display:block;
-    }
-    .banner.expanded .head{ padding:12px 0 6px; }
-    .banner.expanded .close-btn{
-      position:absolute; top:8px; right:8px; border:0; background:#f0f0f0; padding:6px 10px; border-radius:6px;
-      font-weight:700; cursor:pointer;
-    }
-    .banner.expanded .content{ padding:8px 12px 12px; }
+  .banner.roxo { background: #7b3fc5; }
+  .banner.verde { background: #1abc9c; }
 
-    /* Topo Vendas + Área de ações (local único) */
-    .topbar{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin:12px 0 6px; }
-    .title-vendas{ font-size:28px; font-weight:700; color:#222; margin:0; }
+  .expandir {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 18px;
+    opacity: 0.8;
+  }
 
-    .btn{ border:0; padding:10px 14px; border-radius:8px; cursor:pointer; font-weight:700; font-size:14px; }
-    .btn-purple{ background: linear-gradient(180deg, #6f2fa8, #5a2387); color:#fff; }
-    .btn-gray{ background:#eef0f5; color:#1b1b1b; }
+  .expandir:hover { opacity: 1; }
 
-    /* Ações em massa (movido abaixo de Vendas) */
-    .mass-actions{ display:flex; gap:12px; align-items:center; padding:6px 0 12px; }
+  .banner.expandido {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 50;
+    overflow-y: auto;
+    border-radius: 0;
+    padding: 40px;
+  }
 
-    /* Tabela */
-    .table-panel{ margin-top:6px; border-radius:10px; border:1px solid var(--border); overflow:hidden; background:#fff; }
-    .table-header{ display:flex; align-items:center; justify-content:space-between; padding:12px 14px; background:#f8f8fb; border-bottom:1px solid var(--border); }
-    .table-header .title{ font-weight:700; font-size:16px; color:#333; }
-    .table-header .meta{ color:var(--muted); font-size:12px; }
+  .banner.expandido .expandir::after {
+    content: "✕";
+  }
 
-    .table-wrap{ max-height:360px; overflow:auto; }
-    table{ width:100%; border-collapse:collapse; min-width:860px; }
-    thead th{ text-align:left; padding:12px 14px; font-size:12px; color:var(--muted); border-bottom:1px solid var(--border); position:sticky; top:0; background:#fff; }
-    tbody td{ padding:12px 14px; border-bottom:1px solid #f0f0f4; font-size:14px; vertical-align:middle; }
-    tbody tr:nth-child(odd){ background:#fff; }
-    tbody tr:nth-child(even){ background:#fbfbfd; }
-    tbody tr:hover{ background:#f5f8ff; }
+  /* X dentro do banner ao expandir (no canto superior direito, dentro do overlay) */
+  .fechar-internal {
+    display: none; /* oculto por padrão; aparece apenas no expandido */
+  }
 
-    .cell-small{ width:60px; white-space:nowrap; }
+  /* Ao expandir, colocar o X dentro do overlay, no canto superior direito */
+  .banner.expandido .fechar-internal {
+    display: inline-flex;
+    position: fixed;                /* fixa no canto superior direito da tela expandida */
+    top: 12px;
+    right: 12px;
+    width: 38px;
+    height: 38px;
+    border-radius: 4px;
+    border: 2px solid #fff;
+    background: #e53935;
+    color: #fff;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-weight: bold;
+    z-index: 60;
+  }
+  .banner.expandido .fechar-internal:hover {
+    background: #c62828;
+  }
 
-    .muted{ color:var(--muted); font-size:12px; }
+  /* Ocultar o botão expandir ao expandir o banner */
+  .banner.expandido .expandir {
+    display: none;
+  }
 
-    .amount{ font-weight:700; }
+  /* Ações em Massa – estilo da área com título e dropdown */
+  .acoes {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    background: #fafafa;
+    position: relative;
+  }
 
-    /* Ícones / status */
-    .badge{ display:inline-flex; align-items:center; gap:6px; padding:6px 8px; border-radius:999px; font-weight:700; font-size:12px; }
+  .acoes .titulo {
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    background: #fff;
+  }
 
-    .badge.ok{ background:#e7fff0; color:#0a7a50; border:1px solid #c5f0d1; }
-    .badge.gar{ background:#fffbe0; color:#a06a00; border:1px solid #ffe2a2; }
+  .acoes-dropdown {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: calc(100% + 6px);
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,.15);
+    z-index: 40;
+  }
 
-    .printer-link{ display:inline-flex; align-items:center; gap:6px; color:var(--link); font-weight:700; text-decoration:none; }
+  .acoes-dropdown button {
+    display: block;
+    width: 240px;
+    background: #f8f8f8;
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+    text-align: left;
+    border-radius: 6px;
+    cursor: pointer;
+    margin: 2px 0;
+  }
 
-    /* Hotmart (símbolo) */
-    .hotmart{ width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; }
+  .acoes-dropdown button:hover {
+    background: #eaeaea;
+  }
 
-    /* Filtros (ícone ao lado do Canal no cabeçalho) */
-    .funnel{ width:16px; height:16px; vertical-align:middle; margin-left:6px; }
+  /* botão de filtro (funil) */
+  .btnFiltro {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+  }
+  .btnFiltro svg {
+    width: 16px; height: 16px;
+  }
 
-    /* Linha de ação (botão genérico) */
-    .action-btn{ display:inline-flex; align-items:center; justify-content:center;
-      padding:6px 10px; border-radius:6px; border:1px solid #e3e3ee; background:#fff; cursor:pointer;
-      font-weight:700; color:#1a1a1a;
-    }
+  .filtros-panel {
+    display: none;
+    position: absolute;
+    right: 14px;
+    top: 46px;
+    width: 320px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,.15);
+    z-index: 50;
+  }
 
-    /* Paginação */
-    .pagination{ display:flex; justify-content:flex-end; gap:8px; padding:12px; border-top:1px solid var(--border); background:#fff; }
-    .page{ padding:8px 12px; border-radius:6px; border:1px solid #e7e7f0; background:#fff; cursor:pointer; font-weight:700; }
-    .page.active{ background: linear-gradient(180deg, #f0e7ff, #e9d9ff); color:var(--purple); }
+  .filtros-panel h4 {
+    margin: 0 0 8px;
+    font-size: 14px;
+    font-weight: 700;
+  }
 
-    @media (max-width: 900px){
-      .container{ padding:0 12px; }
-      table{ min-width:unset; width:100%; }
-    }
-  </style>
+  .filtros-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin: 6px 0;
+  }
+
+  .filtros-panel label {
+    font-size: 12px;
+    color: #555;
+  }
+
+  .filtros-panel input, .filtros-panel select {
+    font: inherit;
+    padding: 6px 8px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+  }
+
+  .filtros-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+  }
+
+  /* TABELA */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead {
+    background: #f2f3f5;
+    color: #555;
+    text-align: left;
+  }
+
+  th, td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+  }
+
+  tbody {
+    display: block;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+
+  thead, tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+  }
+
+  tbody tr:hover {
+    background: #fafafa;
+  }
+
+  .checkboxCol {
+    width: 40px;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .badge.emitida {
+    background: #d4f5e0;
+    color: #2e8b57;
+  }
+
+  .badge.pendente {
+    background: #ffe6b3;
+    color: #a87b00;
+  }
+
+  .icon {
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+  }
+
+  .tooltip {
+    position: relative;
+    display: inline-block;
+  }
+
+  .tooltip .tooltiptext {
+    visibility: hidden;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    padding: 4px 8px;
+    border-radius: 6px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .tooltip:hover .tooltiptext {
+    visibility: visible;
+  }
+
+  .btn-acao {
+    background: #7b3fc5;
+    color: #fff;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .btn-acao:hover {
+    background: #6b2fb5;
+  }
+
+  /* AÇÕES EM MASSA E PAGINAÇÃO */
+  .paginacao {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+  }
+
+  .paginacao button {
+    border: 1px solid #ccc;
+    background: #fff;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .paginacao button:hover {
+    background: #f1f1f1;
+  }
+
+  /* Página info */
+  #paginaInfo {
+    font-size: 13px;
+    color: #555;
+  }
+
+</style>
 </head>
 <body>
-  <div class="container">
 
-    <div class="panel">
+<div class="container">
 
-      <!-- Banners -->
-      <div class="banner" id="banner-novidades" aria-label="Banner de novidades">
-        <button class="expand-btn" aria-label="Expandir Novidades" onclick="expandBanner('banner-novidades')">
-          <!-- duas setas diagonais (estilo pedido) -->
-          <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M6 18l6-6-6-6"></path>
-            <path d="M12 6l6 6-6 6"></path>
-          </svg>
-        </button>
-        <div class="col">
-          <div class="head novidades" style="background:linear-gradient(90deg, #6f2fa8, #8f4bb6); color:#fff; padding:12px;">🆕 Novidades</div>
-          <div class="content" style="padding:12px 14px;">
-            <ul style="margin:0; padding-left:18px;">
-              <li>Fique por dentro das novidades da reforma tributária, que serão aplicadas a partir de Janeiro/2026. Clique <a class="link-here" href="#" aria-label="Novidades - aqui">[aqui]</a></li>
-              <li>Agora você também pode emitir notas de seus produtos físicos vendidos na Hotmart, pelo eNotas. Para saber mais, clique <a class="link-here" href="#" aria-label="Hotmart - aqui">[aqui]</a></li>
-            </ul>
-          </div>
-        </div>
-      </div>
+  <!-- BANNERS -->
+  <div class="banners">
+    <div class="banner roxo" id="novidades">
+      <span class="expandir" onclick="expandirBanner('novidades')">⛶</span>
+      <button class="fechar-internal" aria-label="Fechar novidades" onclick="fecharBanner('novidades')">✖</button>
+      <h3>🆕 Novidades</h3>
+      <ul>
+        <li>Fique por dentro das novidades da reforma tributária, que serão aplicadas a partir de Janeiro/2026. Clique <a>[aqui]</a></li>
+        <li>Agora você também pode emitir notas de seus produtos físicos vendidos na Hotmart, pelo eNotas. Para saber mais, clique <a>[aqui]</a></li>
+      </ul>
+    </div>
 
-      <div class="banner" id="banner-avisos" aria-label="Banner de avisos" style="margin-top:6px;">
-        <button class="expand-btn" aria-label="Expandir Avisos" onclick="expandBanner('banner-avisos')">
-          <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M6 18l6-6-6-6"></path>
-            <path d="M12 6l6 6-6 6"></path>
-          </svg>
-        </button>
-        <div class="col">
-          <div class="head avisos" style="background:linear-gradient(90deg, #2fb7ab, #2aa79e); color:#fff; padding:12px;">⚠ Avisos</div>
-          <div class="content" style="padding:12px 14px;">
-            <ul style="margin:0; padding-left:18px;">
-              <li>Você possui <strong>20 notas fiscais não emitidas</strong>, clique <a class="link-here" href="#" aria-label="Notas pendentes - aqui">[aqui]</a> para detalhes.</li>
-              <li>O seu certificado digital irá vencer em <strong>10 dias</strong>, clique <a class="link-here" href="#" aria-label="Certificado - aqui">[aqui]</a> para atualizá-lo.</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      <!-- Título Vendas e botão Nova venda (em posição central) -->
-      <div class="topbar" style="margin-top:12px;">
-        <h2 class="title-vendas" style="margin:0;">Vendas</h2>
-      </div>
-
-      <!-- Nova venda (ficará ao lado de Vendas, conforme solicitado) -->
-      <div style="display:flex; justify-content:flex-end; gap:12px; align-items:center; margin-bottom:6px;">
-        <button id="btn-nova-venda" class="btn btn-purple" title="Nova venda">Nova venda</button>
-      </div>
-
-      <!-- Ações em massa (movido abaixo de Vendas) -->
-      <div class="mass-actions" aria-label="Ações em massa" style="margin:6px 0 12px;">
-        <button id="btn-acoes" class="btn btn-gray" title="Ações em massa" style="min-width:180px;">Ações em massa</button>
-      </div>
-
-      <!-- Tabela -->
-      <div class="table-panel" id="tabela-vendas" aria-label="Tabela de vendas com paginação">
-        <div class="table-header">
-          <div>
-            <div class="title">Ações em massa</div>
-            <div class="muted" style="font-size:12px;">Resumo das últimas transações</div>
-          </div>
-          <div class="meta" id="visao-pagina" style="font-weight:700;">Página 1 de 3</div>
-        </div>
-
-        <div class="table-wrap" id="tabela-scroll" tabindex="0" aria-label="Tabela com rolagem e paginação">
-          <table role="table" aria-label="Tabela de vendas">
-            <thead>
-              <tr>
-                <th class="cell-small" style="width:1px;"></th>
-                <th>Data</th>
-                <th>Produto</th>
-                <th>Cliente</th>
-                <th>Valor</th>
-                <th>Notas fiscais</th>
-                <th>Canal
-                  <span class="funnel" aria-label="Filtro" title="Filtro" style="margin-left:6px;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M3 5h18l-6 6v4l-6 4V11L3 5z"/>
-                    </svg>
-                  </span>
-                </th>
-              </tr>
-            </thead>
-            <tbody id="tbody-vendas">
-              <!-- Página 1 (linhas 1-5) -->
-              <tr data-page="1">
-                <td class="cell-small">
-                  <button class="expand-btn" aria-label="Expandir linha 1" title="Expandir">
-                    <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M6 18l6-6-6-6"></path>
-                      <path d="M12 6l6 6-6 6"></path>
-                    </svg>
-                  </button>
-                </td>
-                <td>02/10/2025</td>
-                <td>Curso Marketing Digital</td>
-                <td>Maria Silva</td>
-                <td>R$ 249,90</td>
-                <td>
-                  <!-- Emitida com impressora clicável -->
-                  <a href="#" class="printer-link" title="Emitida (clicável)">
-                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                      <path d="M6 9V6a2 2 0 012-2h8a2 2 0 012 2v3" />
-                      <path d="M6 13h12v4H6z" />
-                      <path d="M6 16h12" />
-                    </svg>
-                    Emitida
-                  </a>
-                </td>
-                <td>
-                  <!-- Hotmart icon (símbolo) -->
-                  <span class="hotmart" title="Hotmart" aria-label="Hotmart">
-                    <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 2l3 6 6 1-4 4 1 6-6-3-6 3 1-6-4-4 6-1z" fill="#ff6f00"/>
-                    </svg>
-                  </span>
-                </td>
-              </tr>
-
-              <!-- Rita Nogueira (ampulheta) -->
-              <tr data-page="1">
-                <td class="cell-small">
-                  <button class="expand-btn" aria-label="Expandir linha Rita" title="Expandir">
-                    <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M6 18l6-6-6-6"></path>
-                      <path d="M12 6l6 6-6 6"></path>
-                    </svg>
-                  </button>
-                </td>
-                <td>29/09/2025</td>
-                <td>Assinatura Mensal</td>
-                <td>Ana Pereira</td>
-                <td>R$ 39,90</td>
-                <td>
-                  <span class="tooltip" aria-label="Pendência">
-                    <span class="badge" style="padding:6px 8px;">⏳</span>
-                    <span class="tooltip-text" style="position:absolute; left:50%; transform:translateX(-50%); bottom:125%; background:#333; color:#fff; padding:6px 8px; border-radius:6px; font-size:12px;">
-                      Em garantia
-                    </span>
-                  </span>
-                </td>
-                <td>
-                  <span class="badge gar" aria-label="Venda pendente">Em garantia</span>
-                </td>
-              </tr>
-
-              <!-- Bruno Costa -->
-              <tr data-page="1">
-                <td class="cell-small">
-                  <button class="expand-btn" aria-label="Expandir linha Bruno" title="Expandir">
-                    <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M6 18l6-6-6-6"></path>
-                      <path d="M12 6l6 6-6 6"></path>
-                    </svg>
-                  </button>
-                </td>
-                <td>21/09/2025</td>
-                <td>eBook: SEO Avançado</td>
-                <td>Bruno Costa</td>
-                <td>R$ 59,00</td>
-                <td>
-                  <a href="#" class="printer-link" title="Emitida">
-                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                      <path d="M6 9V6a2 2 0 012-2h8a2 2 0 012 2v3" />
-                      <path d="M6 13h12v4H6z" />
-                      <path d="M6 16h12" />
-                    </svg>
-                    Emitida
-                  </a>
-                </td>
-                <td>
-                  <span class="hotmart" title="Hotmart" aria-label="Hotmart">
-                    <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 2l3 6 6 1-4 4 1 6-6-3-6 3 1-6-4-4 6-1z" fill="#ff6f00"/>
-                    </svg>
-                  </span>
-                </td>
-              </tr>
-
-              <!-- Mariana Lopes -->
-              <tr data-page="1">
-                <td class="cell-small">
-                  <button class="expand-btn" aria-label="Expandir linha Mariana" title="Expandir">
-                    <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M6 18l6-6-6-6"></path>
-                      <path d="M12 6l6 6-6 6"></path>
-                    </svg>
-                  </button>
-                </td>
-                <td>12/09/2025</td>
-                <td>Workshop Analytics</td>
-                <td>Mariana Lopes</td>
-                <td>R$ 499,00</td>
-                <td>
-                  <span class="badge gar" aria-label="Venda pendente">Em garantia</span>
-                </td>
-                <td>
-                  <span class="hotmart" title="Hotmart" aria-label="Hotmart">
-                    <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 2l3 6 6 1-4 4 1 6-6-3-6 3 1-6-4-4 6-1z" fill="#ff6f00"/>
-                    </svg>
-                  </span>
-                </td>
-              </tr>
-
-              <!-- Felipe N. -->
-              <tr data-page="1">
-                <td class="cell-small">
-                  <button class="expand-btn" aria-label="Expandir linha Felipe" title="Expandir">
-                    <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M6 18l6-6-6-6"></path>
-                      <path d="M12 6l6 6-6 6"></path>
-                    </svg>
-                  </button>
-                </td>
-                <td>03/09/2025</td>
-                <td>Template Design</td>
-                <td>Felipe N.</td>
-                <td>R$ 79,90</td>
-                <td>
-                  <a href="#" class="printer-link" title="Emitida">
-                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                      <path d="M6 9V6a2 2 0 012-2h8a2 2 0 012 2v3" />
-                      <path d="M6 13h12v4H6z" />
-                      <path d="M6 16h12" />
-                    </svg>
-                    Emitida
-                  </a>
-                </td>
-                <td>
-                  <span class="hotmart" title="Hotmart" aria-label="Hotmart">
-                    <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 2l3 6 6 1-4 4 1 6-6-3-6 3 1-6-4-4 6-1z" fill="#ff6f00"/>
-                    </svg>
-                  </span>
-                </td>
-              </tr>
-
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Paginação -->
-        <div class="pagination" role="navigation" aria-label="Paginação da tabela">
-          <button class="page" onclick="prevPage()" aria-label="Página anterior">&laquo; Anterior</button>
-          <span class="page active" id="pagina-visual">1</span>
-          <span class="page" onclick="goToPage(2)" aria-label="Página 2" >2</span>
-          <span class="page" onclick="goToPage(3)" aria-label="Página 3" >3</span>
-          <button class="page" onclick="nextPage()" aria-label="Próxima página">Próxima &raquo;</button>
-        </div>
-      </div>
-
+    <div class="banner verde" id="avisos">
+      <span class="expandir" onclick="expandirBanner('avisos')">⛶</span>
+      <button class="fechar-internal" aria-label="Fechar avisos" onclick="fecharBanner('avisos')">✖</button>
+      <h3>🚨 Avisos</h3>
+      <ul>
+        <li>Você possui <b>20 notas fiscais não emitidas</b>, clique <a>[aqui]</a> para detalhes.</li>
+        <li>O seu certificado digital irá vencer em <b>10 dias</b>, clique <a>[aqui]</a> para atualizá-lo.</li>
+      </ul>
     </div>
   </div>
 
-  <script>
-    // Expand banners dentro da página com X para fechar
-    function expandBanner(id){
-      const banner = document.getElementById(id);
-      if(!banner) return;
-      const isExpanded = banner.classList.contains('expanded');
-      if(isExpanded){
-        // fechar
-        banner.classList.remove('expanded');
-        const closeBtn = banner.querySelector('.close-btn');
-        if(closeBtn) closeBtn.remove();
-        // reexibir botão de expand
-        const btn = banner.querySelector('.expand-btn');
-        if(btn) btn.style.display = 'flex';
-      } else {
-        // expandir
-        banner.classList.add('expanded');
-        // esconder botão de expand
-        const btn = banner.querySelector('.expand-btn');
-        if(btn) btn.style.display = 'none';
-        // criar botão de fechar (X) se não houver
-        let closeBtn = banner.querySelector('.close-btn');
-        if(!closeBtn){
-          closeBtn = document.createElement('button');
-          closeBtn.className = 'close-btn';
-          closeBtn.textContent = '✖';
-          closeBtn.setAttribute('aria-label', 'Fechar');
-          closeBtn.addEventListener('click', ()=> {
-            banner.classList.remove('expanded');
-            if(btn) btn.style.display = 'flex';
-            closeBtn.remove();
-          });
-          banner.appendChild(closeBtn);
-        }
-      }
+  <!-- AÇÕES EM MASSA + FILTROS -->
+  <div class="acoes" style="position:relative;">
+    <div class="titulo" onclick="toggleAcoesDropdown()">Ações em massa</div>
+    <div id="acoesDropdown" class="acoes-dropdown" aria-label="Ações em massa dropdown" style="display:none;">
+      <button onclick="handleAcoes('gerar')">Gerar nota fiscal</button>
+      <button onclick="handleAcoes('copiar')">Copiar</button>
+      <button onclick="handleAcoes('cancelar')">Cancelar</button>
+      <button onclick="handleAcoes('enviar')">Enviar por e-mail</button>
+    </div>
+
+    <button id="btnFiltro" class="btnFiltro" onclick="toggleFiltroPanel()" aria-label="Filtros" title="Filtros" style="margin-left: 12px;">
+      <span style="display:inline-flex; align-items:center; gap:6px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Filtro">
+          <path d="M3 5h18M6 12h12M10 19h4"/>
+        </svg>
+        Filtros
+      </span>
+    </button>
+
+    <div id="filtrosPanel" class="filtros-panel" aria-label="Filtros panel" style="display:none;">
+      <h4>Filtros</h4>
+      <div class="filtros-row">
+        <label>Data inicio</label>
+        <input type="date" id="fDataInicio" />
+      </div>
+      <div class="filtros-row">
+        <label>Data fim</label>
+        <input type="date" id="fDataFim" />
+      </div>
+      <div class="filtros-row">
+        <label>Cliente</label>
+        <input type="text" id="fCliente" placeholder="Nome do cliente" />
+      </div>
+      <div class="filtros-row">
+        <label>Produto</label>
+        <input type="text" id="fProduto" placeholder="Produto" />
+      </div>
+      <div class="filtros-row">
+        <label>Canal</label>
+        <select id="fCanal">
+          <option value="">Todos</option>
+          <option>Venda Manual</option>
+          <option>Hotmart</option>
+        </select>
+      </div>
+      <div class="filtros-row">
+        <label>Status</label>
+        <select id="fStatus">
+          <option value="">Todos</option>
+          <option value="Emitida">Emitida</option>
+          <option value="Pendente">Pendente</option>
+        </select>
+      </div>
+      <div class="filtros-actions">
+        <button onclick="clearFilters()">Limpar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABELA -->
+  <table>
+    <thead>
+      <tr>
+        <th class="checkboxCol"></th> <!-- coluna de seleção -->
+        <th>Data</th>
+        <th>Produto</th>
+        <th>Cliente</th>
+        <th>Valor</th>
+        <th>Notas Fiscais</th>
+        <th>Canal</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody id="tabelaVendas">
+      <!-- Linhas geradas via JS -->
+    </tbody>
+  </table>
+
+  <div id="paginaInfo" style="padding:12px 20px; text-align:right; color:#555;">Página 1 de 3</div>
+
+</div>
+
+<script>
+/* Dados: 12 itens para 3 páginas (4 por página) com status variado */
+const allVendas = [
+  {data:'06/10/2025', produto:'Imersão Mestres da Audiência', cliente:'Leila Carvalho', valor:'R$ 42,90', nota:'Emitida', venda:'realizada', canal:'Venda Manual'},
+  {data:'06/10/2025', produto:'Imersão Mestres da Audiência', cliente:'Francisco Helton', valor:'R$ 42,90', nota:'Emitida', venda:'realizada', canal:'Venda Manual'},
+  {data:'06/10/2025', produto:'Mentoria Avançada', cliente:'Gisele Montalli', valor:'R$ 150,00', nota:'Pendente', venda:'em garantia', canal:'Venda Manual'},
+  {data:'05/10/2025', produto:'Workshop Digital', cliente:'Marcos Silva', valor:'R$ 99,90', nota:'Pendente', venda:'em garantia', canal:'Venda Manual'},
+
+  {data:'04/10/2025', produto:'Curso de Copywriting', cliente:'Ana Pereira', valor:'R$ 79,00', nota:'Emitida', venda:'realizada', canal:'Venda Manual'},
+  {data:'03/10/2025', produto:'Trilha de Sucesso', cliente:'Bruno Costa', valor:'R$ 59,00', nota:'Emitida', venda:'realizada', canal:'Venda Manual'},
+  {data:'02/10/2025', produto:'Mentoria Express', cliente:'João Mendes', valor:'R$ 120,00', nota:'Pendente', venda:'em garantia', canal:'Venda Manual'},
+  {data:'01/10/2025', produto:'Programa Premium', cliente:'Patrícia Lima', valor:'R$ 249,00', nota:'Emitida', venda:'realizada', canal:'Venda Manual'},
+
+  {data:'30/09/2025', produto:'Curso Avançado', cliente:'Ricardo Alves', valor:'R$ 89,00', nota:'Pendente', venda:'em garantia', canal:'Venda Manual'},
+  {data:'29/09/2025', produto:'Treinamento Pro', cliente:'Carla Nunes', valor:'R$ 129,00', nota:'Emitida', venda:'realizada', canal:'Venda Manual'},
+  {data:'28/09/2025', produto:'Curso de SEO', cliente:'Thiago Lima', valor:'R$ 110,00', nota:'Emitida', venda:'realizada', canal:'Venda Manual'},
+  {data:'27/09/2025', produto:'Webinar Avançado', cliente:'Lucas Ramos', valor:'R$ 55,00', nota:'Pendente', venda:'em garantia', canal:'Venda Manual'}
+];
+
+// Dados para 3 páginas (linhasPorPagina = 4)
+let paginaAtual = 1;
+let linhasPorPagina = 4;
+
+// filtros
+let filtros = {
+  dataInicio: '',
+  dataFim: '',
+  cliente: '',
+  produto: '',
+  canal: '',
+  status: ''
+};
+
+function normalizeDate(d) {
+  if (!d) return '';
+  const dt = new Date(d);
+  if (isNaN(dt)) return '';
+  // retornar no formato yyyy-mm-dd para comparação
+  return dt.toISOString().split('T')[0];
+}
+
+function aplicarFiltros(lista) {
+  const v = lista || allVendas;
+  const sIni = filtros.dataInicio ? new Date(filtros.dataInicio) : null;
+  const sFim = filtros.dataFim ? new Date(filtros.dataFim) : null;
+  return v.filter(x => {
+    // Data
+    if (sIni || sFim) {
+      const dt = new Date(x.data);
+      if (sIni && dt < sIni) return false;
+      if (sFim && dt > sFim) return false;
+    }
+    // Cliente
+    if (filtros.cliente && !x.cliente.toLowerCase().includes(filtros.cliente.toLowerCase())) return false;
+    // Produto
+    if (filtros.produto && !x.produto.toLowerCase().includes(filtros.produto.toLowerCase())) return false;
+    // Canal
+    if (filtros.canal && x.canal !== filtros.canal) return false;
+    // Status
+    if (filtros.status && x.nota !== filtros.status) return false;
+    return true;
+  });
+}
+
+function renderTabela() {
+  const tabela = document.getElementById("tabelaVendas");
+  tabela.innerHTML = "";
+
+  // dados atualmente filtrados
+  const dadosFiltrados = aplicarFiltros(allVendas);
+  const total = dadosFiltrados.length;
+  const maxPag = Math.max(1, Math.ceil(total / linhasPorPagina));
+  if (paginaAtual > maxPag) paginaAtual = maxPag;
+
+  const inicio = (paginaAtual - 1) * linhasPorPagina;
+  const fim = inicio + linhasPorPagina;
+  const paginadas = dadosFiltrados.slice(inicio, fim);
+
+  paginadas.forEach((v, idx) => {
+    const tr = document.createElement("tr");
+    const globalIndex = inicio + idx;
+
+    // Checkbox
+    const checkbox = `<td class="checkboxCol" style="text-align:center;">
+      <input type="checkbox" class="rowSel" data-id="${globalIndex}">
+    </td>`;
+
+    // Data
+    // Nota com ícones
+    let notaHTML = "";
+    if (v.nota === "Emitida") {
+      notaHTML = `<span class='badge emitida'>
+        <span class="tooltip" aria-label="Emitida">
+          🖨️
+          <span class="tooltiptext">emitida</span>
+        </span>
+      </span>`;
+    } else {
+      notaHTML = `<span class='badge pendente tooltip'>
+        <span class="tooltip" aria-label="Pendente">
+          ⏳
+          <span class="tooltiptext">pendente</span>
+        </span>
+      </span>`;
     }
 
-    // Tabela: paginação (5 linhas por página)
-    const rows = Array.from(document.querySelectorAll('#tbody-vendas tr'));
-    const rowsPerPage = 5;
-    const totalPages = Math.ceil(rows.length / rowsPerPage);
-    let currentPage = 1;
+    // Ações
+    const acoesHTML = `<button class='btn-acao'>Visualizar</button>`;
 
-    function showPage(p){
-      currentPage = p;
-      rows.forEach((r, idx) => {
-        const pageOfRow = Math.floor(idx / rowsPerPage) + 1;
-        r.style.display = (pageOfRow === p) ? '' : 'none';
-      });
-      // atualização visual da paginação
-      document.querySelectorAll('.pagination .page').forEach(el => el.classList.remove('active'));
-      const pageButtons = Array.from(document.querySelectorAll('.pagination .page')).filter(n => !n.textContent.includes('Anterior') && !n.textContent.includes('Próxima'));
-      pageButtons.forEach((btn, i) => {
-        const num = i + 1;
-        if(num === p) btn.classList.add('active');
-      });
-      document.getElementById('visao-pagina')?.textContent = `Página ${p} de ${totalPages}`;
+    tr.innerHTML = `
+      ${checkbox}
+      <td>${v.data}</td>
+      <td>${v.produto}</td>
+      <td>${v.cliente}</td>
+      <td>${v.valor}</td>
+      <td>${notaHTML}</td>
+      <td>${v.canal}</td>
+      <td>${acoesHTML}</td>
+    `;
+    tabela.appendChild(tr);
+  });
+
+  // Atualiza pagina info e o seletor de página (1..3)
+  const paginaInfo = document.getElementById("paginaInfo");
+  if (paginaInfo) {
+    paginaInfo.innerText = `Página ${paginaAtual} de ${maxPag}`;
+  }
+  const paginaSel = document.getElementById("paginaSelector");
+  if (paginaSel) {
+    paginaSel.innerHTML = "";
+    for (let i = 1; i <= 3; i++) {
+      const opt = document.createElement("option");
+      opt.value = i;
+      opt.text = String(i);
+      if (i === paginaAtual) opt.selected = true;
+      paginaSel.appendChild(opt);
     }
+  }
+}
 
-    function goToPage(p){
-      if(p < 1) p = 1;
-      if(p > totalPages) p = totalPages;
-      showPage(p);
-    }
-    function prevPage(){ goToPage(currentPage - 1); }
-    function nextPage(){ goToPage(currentPage + 1); }
+function anterior() {
+  const maxPag = Math.max(1, Math.ceil(aplicarFiltros(allVendas).length / linhasPorPagina));
+  if (paginaAtual > 1) {
+    paginaAtual--;
+    renderTabela();
+  }
+}
 
-    // inicialização
-    showPage(1);
-  </script>
+function proxima() {
+  const maxPag = Math.max(1, Math.ceil(aplicarFiltros(allVendas).length / linhasPorPagina));
+  if (paginaAtual < maxPag) {
+    paginaAtual++;
+    renderTabela();
+  }
+}
+
+function goToPage(p) {
+  const page = parseInt(p, 10);
+  const maxPag = Math.max(1, Math.ceil(aplicarFiltros(allVendas).length / linhasPorPagina));
+  if (page >= 1 && page <= maxPag) {
+    paginaAtual = page;
+    renderTabela();
+  }
+}
+
+/* Ações em massa dropdown (já existente) */
+function toggleAcoesDropdown() {
+  const dd = document.getElementById("acoesDropdown");
+  dd.style.display = dd.style.display === "block" ? "none" : "block";
+}
+function handleAcoes(action) {
+  alert("Ação em massa: " + action);
+  document.getElementById("acoesDropdown").style.display = "none";
+}
+
+/* Filtros panel */
+function toggleFiltroPanel() {
+  const panel = document.getElementById("filtrosPanel");
+  panel.style.display = panel.style.display === "block" ? "none" : "block";
+}
+function applyFiltersFromUI() {
+  filtros.dataInicio = document.getElementById("fDataInicio").value;
+  filtros.dataFim = document.getElementById("fDataFim").value;
+  filtros.cliente = document.getElementById("fCliente").value;
+  filtros.produto = document.getElementById("fProduto").value;
+  filtros.canal = document.getElementById("fCanal").value;
+  filtros.status = document.getElementById("fStatus").value;
+  paginaAtual = 1;
+  renderTabela();
+}
+function clearFilters() {
+  document.getElementById("fDataInicio").value = "";
+  document.getElementById("fDataFim").value = "";
+  document.getElementById("fCliente").value = "";
+  document.getElementById("fProduto").value = "";
+  document.getElementById("fCanal").value = "";
+  document.getElementById("fStatus").value = "";
+  filtros = { dataInicio:'', dataFim:'', cliente:'', produto:'', canal:'', status:'' };
+  paginaAtual = 1;
+  renderTabela();
+}
+function refreshFiltersOnInput() {
+  // aplica filtros de forma incremental
+  applyFiltersFromUI();
+}
+
+document.addEventListener('click', (e) => {
+  // fecha painéis quando clicar fora
+  const acoesBox = document.querySelector('.acoes');
+  const targetInsideAcoes = acoesBox.contains(e.target);
+  const filtrosPanel = document.getElementById('filtrosPanel');
+  if (!targetInsideAcoes && filtrosPanel && !filtrosPanel.contains(e.target)) {
+    filtrosPanel.style.display = 'none';
+  }
+});
+
+// Atualiza o filtro a cada alteração
+document.addEventListener('input', (e) => {
+  if (e.target.closest('#fDataInicio') || e.target.closest('#fDataFim') ||
+      e.target.closest('#fCliente') || e.target.closest('#fProduto') ||
+      e.target.closest('#fCanal') || e.target.closest('#fStatus')) {
+    // aplicar automaticamente
+    refreshFiltersOnInput();
+  }
+});
+
+function expandirBanner(id) {
+  const banner = document.getElementById(id);
+  const expandido = banner.classList.contains("expandido");
+  document.querySelectorAll(".banner").forEach(b => b.classList.remove("expandido"));
+  if (!expandido) banner.classList.add("expandido");
+  // manter X dentro do banner ao expandir
+  // atualização de visibilidade do X
+  updateXVisibility();
+}
+function fecharBanner(id) {
+  const banner = document.getElementById(id);
+  if (banner) banner.classList.remove("expandido");
+  updateXVisibility();
+}
+function updateXVisibility() {
+  document.querySelectorAll(".banner").forEach(b => {
+    const isExpanded = b.classList.contains("expandido");
+    const xBtn = b.querySelector(".fechar-internal");
+    if (xBtn) xBtn.style.display = isExpanded ? "inline-flex" : "none";
+  });
+}
+
+renderTabela();
+updateXVisibility();
+</script>
+
 </body>
 </html>
